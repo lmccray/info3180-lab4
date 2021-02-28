@@ -1,3 +1,16 @@
 body {
     padding-top: 5rem;
 }
+
+.imageLst{
+    display: grid; 
+    list-style-type: none;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 1rem;
+    padding: 1rem;
+}
+
+.imageLst li img{
+    width: 350px;
+    height: 250px;
+}

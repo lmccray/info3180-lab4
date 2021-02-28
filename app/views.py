@@ -6,9 +6,9 @@ This file creates your application.
 """
 import os
 from app import app
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from werkzeug.utils import secure_filename
-
+from .forms import UploadForm
 
 ###
 # Routing for your application.
@@ -28,26 +28,62 @@ def about():
 
 @app.route('/upload', methods=['POST', 'GET'])
 def upload():
+    form = UploadForm()
     if not session.get('logged_in'):
         abort(401)
 
-    # Instantiate your form class
-
-    # Validate file upload on submit
-    if request.method == 'POST':
+        # Instantiate your form class
+        # form = UploadForm()
+        # Validate file upload on submit
+    if request.method == 'POST' and form.validate_on_submit():
+        print("hello")
         # Get file data and save to your uploads folder
-
+        file = form.upload.data
+        filename= secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
         flash('File Saved', 'success')
         return redirect(url_for('home'))
 
-    return render_template('upload.html')
+    print("a diff one")
+    flash_errors(form)
+    return render_template('upload.html',form=form)
+
+#def get_uploaded_images():
+ #   lst = [] 
+  #  for subdir, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
+   #     for file_ in files: 
+    #        if file_.split('.')[-1] in ('jpg', 'png','jpeg'):
+     #          lst.append(file_)
+    #return lst
+
+def get_uploaded_images():
+    rootdir = os.getcwd()
+    lst= []
+    for subdir, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
+        for file_ in files:
+         if file_.split('.')[-1] in ('jpg', 'png','jpeg'):
+            lst.append(file_)
+    return lst
+
+@app.route("/uploads/<filename>")
+def get_image(filename):
+    root_dir = os.getcwd()
+    return send_from_directory(os.path.join(root_dir, app.config['UPLOAD_FOLDER']), filename)
+
+@app.route("/files")
+def files(): 
+    if not session.get('logged_in'):
+        abort(401)
+    uploadedImages = get_uploaded_images()
+    return render_template("files.html", uploadedImages=uploadedImages)
 
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     error = None
     if request.method == 'POST':
-        if request.form['username'] != app.config['USERNAME'] or request.form['password'] != app.config['PASSWORD']:
+        if request.form['username'] != app.config['ADMIN_USERNAME'] or request.form['password'] != app.config['ADMIN_PASSWORD']:
             error = 'Invalid username or password'
         else:
             session['logged_in'] = True
